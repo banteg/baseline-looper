@@ -12,17 +12,8 @@ def test_borrow(weth, yes, router, looper, baseline, dev):
 
     # buy yes
     weth.approve(router, 2**256 - 1, sender=dev)
-    out = router.exactInputSingle(
-        [
-            weth,
-            yes,
-            10000,
-            dev,
-            2**256 - 1,
-            weth.balanceOf(dev),
-            0,  # min amount out
-            0,
-        ],
+    router.exactInputSingle(
+        [weth, yes, 10000, dev, 2**256 - 1, weth.balanceOf(dev), 0, 0],
         sender=dev,
     )
     bassets = yes.balanceOf(dev)
@@ -36,7 +27,8 @@ def test_borrow(weth, yes, router, looper, baseline, dev):
     print(f"borrow {debt / 1e18} weth")
 
 
-def test_loop_borrow(weth, yes, router, looper, baseline, dev):
+@pytest.mark.parametrize("profitable", [True, False])
+def test_loop_borrow(weth, yes, router, looper, baseline, dev, whale, profitable):
     def print_status():
         acc = baseline.getCreditAccount(dev)
         toolstr.print_table(
@@ -54,9 +46,16 @@ def test_loop_borrow(weth, yes, router, looper, baseline, dev):
     looper.loop("10 ether", 30, 10, sender=dev)
     print_status()
 
+    if profitable:
+        weth.deposit(value="1000 ether", sender=whale)
+        weth.approve(router, 2**256 - 1, sender=whale)
+        router.exactInputSingle(
+            [weth, yes, 10000, whale, 2**256 - 1, weth.balanceOf(whale), 0, 0],
+            sender=whale,
+        )
+
     yes.approve(looper, 2**256 - 1, sender=dev)
     tx = looper.unwind(sender=dev)
-    tx.show_trace()
     print_status()
 
     print(yes.balanceOf(looper) / 1e18, "recovered")

@@ -7,6 +7,11 @@ def dev(accounts):
 
 
 @pytest.fixture
+def whale(accounts):
+    return accounts[1]
+
+
+@pytest.fixture
 def weth(project):
     return project.weth.at("0x4300000000000000000000000000000000000004")
 

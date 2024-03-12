@@ -89,7 +89,7 @@ def loop(amount: uint256, add_days: uint256, num_loops: uint256):
 @external
 def unwind():
     """
-    Unwind a position using a flash loan. Requires a small amount of WETH for a loan fee.
+    Unwind a position using a flash loan. Allows unwinding underwater positions.
     """
     weth: ERC20 = ERC20(WETH)
     yes: ERC20 = ERC20(YES)
