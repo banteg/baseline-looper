@@ -1,0 +1,11 @@
+name: looper
+foundry:
+  host: auto
+geth:
+  blast:
+    mainnet:
+      uri: https://rpc.blast.io
+
+default_ecosystem: blast
+blast:
+  default_network: mainnet-fork
