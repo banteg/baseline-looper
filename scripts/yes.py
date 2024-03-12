@@ -29,6 +29,7 @@ def loop():
     weth = project.weth.at("0x4300000000000000000000000000000000000004")
     yes = project.basset.at("0x20fE91f17ec9080E3caC2d688b4EcB48C5aC3a9C")
     router = project.router.at("0x337827814155ECBf24D20231fCA4444F530C0555")
+    quoter = project.quoter.at("0x3b299f65b47c0bfAEFf715Bc73077ba7A0a685bE")
     # TODO: replace w a production contract
     looper = project.Looper.deploy(sender=accounts.test_accounts[0])
 
@@ -49,6 +50,7 @@ def loop():
     wrap_amount = click.prompt(
         f"you have {eth_fmt} eth and {weth_fmt} weth. the contract accepts weth. type how much eth you want to wrap.",
         type=click.FloatRange(min=0, max=eth_balance / 1e18),
+        default=100,
     )
     if wrap_amount > 0:
         click.secho(f"wrapping {wrap_amount} eth into weth", fg="green")
@@ -60,6 +62,7 @@ def loop():
     amount = click.prompt(
         f"how much to ape ser? you have {weth_fmt} weth",
         type=click.FloatRange(min=0, max=weth_balance / 1e18),
+        default=100,
     )
 
     weth_allowance = weth.allowance(user, looper)
@@ -68,7 +71,7 @@ def loop():
         weth.approve(looper, 2**256 - 1, sender=user)
 
     num_loops = click.prompt(
-        "how many times to loop ser?", type=click.IntRange(min=1, max=69)
+        "how many times to loop ser?", type=click.IntRange(min=1, max=69), default=5
     )
     add_days = click.prompt(
         "how many days to add to the credit accounts? you can set to 0 if you already have a position.",
@@ -82,7 +85,17 @@ def loop():
 
     click.secho(f"looping", fg="green")
     # TODO slippage calc
-    looper.loop(int(amount * 1e18), num_loops, add_days, 0, sender=user)
+    acc_after = looper.loop.call(
+        int(amount * 1e18), num_loops, add_days, 0, sender=user
+    )
+    tokens_bought = acc_after.collateral - credit_account.collateral
+    print("tokens bought", toolstr.format(tokens_bought / 1e18))
+    res = quoter.quoteExactOutputSingle.call((weth, yes, tokens_bought, 10000, 0))
+    limit_price = res.sqrtPriceX96After
+    print("price", (limit_price / 2**96) ** 2)
+    show_credit_account(acc_after)
+    limit_price = int(((limit_price / 2**96) ** 2 * 1.01) ** 0.5 * 2**96)
+    looper.loop(int(amount * 1e18), num_loops, add_days, limit_price, sender=user)
     credit_account = baseline.getCreditAccount(user)
     show_credit_account(credit_account)
 
