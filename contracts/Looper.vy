@@ -1,4 +1,6 @@
 # @version 0.3.10
+# @author banteg
+# @notice Leverage loop into YES or unwind your position without needing the WETH.
 from vyper.interfaces import ERC20
 
 struct Borrow:
@@ -22,6 +24,7 @@ struct CreditAccount:
     expiry: uint256
     last_floor: uint256
 
+
 interface Weth:
     def deposit(): payable
     def withdraw(amount: uint256): nonpayable
@@ -37,16 +40,26 @@ interface Baseline:
 interface UniswapRouter:
     def exactInputSingle(params: ExactInputSingleParams) -> uint256: payable
 
+interface Blast:
+    def configureClaimableGas(): nonpayable
+    def configureGovernor(governor: address): nonpayable
+
+
 PAC_POOL: constant(address) = 0xd2499b3c8611E36ca89A70Fda2A72C49eE19eAa8
 ROUTER: constant(address) = 0x337827814155ECBf24D20231fCA4444F530C0555
 WETH: constant(address) = 0x4300000000000000000000000000000000000004
 YES: constant(address) = 0x20fE91f17ec9080E3caC2d688b4EcB48C5aC3a9C
 BASELINE: constant(address) = 0x14eB8d9b6e19842B5930030B18c50B0391561f27
+BLAST: constant(address) = 0x4300000000000000000000000000000000000002
+UNWIND_FEE_BPS: constant(uint256) = 20
+MAX_BPS: constant(uint256) = 10_000
+fee_recipient: immutable(address)
 
 @external
 def __init__():
     weth: ERC20 = ERC20(WETH)
     yes: ERC20 = ERC20(YES)
+    fee_recipient = msg.sender
 
     # pac pulls weth on flash loan repay
     weth.approve(PAC_POOL, max_value(uint256))
@@ -59,13 +72,20 @@ def __init__():
     # baseline pulls yes on borrow
     yes.approve(BASELINE, max_value(uint256))
 
+    # blast specific
+    blast: Blast = Blast(BLAST)
+    blast.configureClaimableGas()
+    blast.configureGovernor(msg.sender)
+
 
 @payable
 @external
 def loop(amount: uint256, add_days: uint256, num_loops: uint256):
     """
-    Loop with WETH. Buys YES and borrows WETH for a number of times.
+    @notice Loop with WETH. Buys YES and borrows WETH for a number of times.
+    @dev Requires WETH approval to pull borrowed WETH multiple times.
     """
+    assert num_loops > 0  # dev: min 1 loop
     weth: ERC20 = ERC20(WETH)
     yes: ERC20 = ERC20(YES)
     baseline: Baseline = Baseline(BASELINE)
@@ -89,29 +109,31 @@ def loop(amount: uint256, add_days: uint256, num_loops: uint256):
 @external
 def unwind():
     """
-    Unwind a position using a flash loan. Allows unwinding underwater positions.
+    @notice Unwind a credit account using a flash loan. Allows unwinding underwater positions.
+    @dev Requires WETH approval if YES sell proceeds are unable to repay the principal.
     """
-    weth: ERC20 = ERC20(WETH)
-    yes: ERC20 = ERC20(YES)
-    pac: FlashLoan = FlashLoan(PAC_POOL)
     baseline: Baseline = Baseline(BASELINE)
+    pac: FlashLoan = FlashLoan(PAC_POOL)
 
-    acc: CreditAccount = Baseline(BASELINE).getCreditAccount(msg.sender)
-    pac.flashLoanSimple(self, WETH, acc.principal + acc.interest, _abi_encode(msg.sender), 0)
+    account: CreditAccount = Baseline(BASELINE).getCreditAccount(msg.sender)
+    debt: uint256 = account.principal + account.interest
+    assert debt > 0  # dev: no debt
+    pac.flashLoanSimple(self, WETH, debt, _abi_encode(msg.sender), 0)
 
 
 @external
 def executeOperation(asset: address, amount: uint256, premium: uint256, initiator: address, params: Bytes[128]) -> bool:
-    assert msg.sender == PAC_POOL
-    assert initiator == self
+    assert msg.sender == PAC_POOL  # dev: must come from pac pool
+    assert initiator == self  # dev: must be self-initiated
 
+    baseline: Baseline = Baseline(BASELINE)
     weth: ERC20 = ERC20(WETH)
     yes: ERC20 = ERC20(YES)
-    baseline: Baseline = Baseline(BASELINE)
 
     user: address = _abi_decode(params, address)
     cash: uint256 = baseline.repay(user, amount)
     yes.transferFrom(user, self, cash)
+    yes.transfer(fee_recipient, cash * UNWIND_FEE_BPS / MAX_BPS)
     self.sell_yes()
     weth_balance: uint256 = weth.balanceOf(self)
     # pull additional weth from the user if yes sell proceeds are insufficient
