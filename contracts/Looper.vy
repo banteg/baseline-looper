@@ -22,7 +22,7 @@ struct CreditAccount:
     interest: uint256
     collateral: uint256
     expiry: uint256
-    last_floor: uint256
+    lastFloor: uint256
 
 
 interface Weth:
@@ -81,7 +81,7 @@ def __init__():
 
 @payable
 @external
-def loop(amount: uint256, num_loops: uint256, add_days: uint256, price_limit: uint160):
+def loop(amount: uint256, num_loops: uint256, add_days: uint256, price_limit: uint160) -> CreditAccount:
     """
     @notice Loop with WETH. Buys YES and borrows WETH for a number of times.
     @dev Requires WETH approval to pull borrowed WETH multiple times.
@@ -103,6 +103,8 @@ def loop(amount: uint256, num_loops: uint256, add_days: uint256, price_limit: ui
         if i < num_loops - 1:
             weth.transferFrom(msg.sender, self, borrow.principal)
             self.buy_yes(price_limit)
+
+    return baseline.getCreditAccount(msg.sender)
 
 
 @external
