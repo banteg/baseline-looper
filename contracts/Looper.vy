@@ -81,31 +81,32 @@ def __init__():
 
 @payable
 @external
-def loop(amount: uint256, add_days: uint256, num_loops: uint256):
+def loop(amount: uint256, num_loops: uint256, add_days: uint256, price_limit: uint160):
     """
     @notice Loop with WETH. Buys YES and borrows WETH for a number of times.
     @dev Requires WETH approval to pull borrowed WETH multiple times.
     """
     assert num_loops > 0  # dev: min 1 loop
+    assert num_loops < 70  # dev: max 69 loops
     days: uint256 = add_days
     borrow: Borrow = empty(Borrow)
 
     weth.transferFrom(msg.sender, self, amount)
-    self.buy_yes()
+    self.buy_yes(price_limit)
 
-    for i in range(20):
+    for i in range(70):
         if i == num_loops:
             break
-        if i > 0:
+        if i == 1:
             days = 0
         borrow = baseline.borrow(msg.sender, yes.balanceOf(self), days)
         if i < num_loops - 1:
             weth.transferFrom(msg.sender, self, borrow.principal)
-            self.buy_yes()
+            self.buy_yes(price_limit)
 
 
 @external
-def unwind():
+def unwind(price_limit: uint160):
     """
     @notice Unwind a credit account using a flash loan. Allows unwinding underwater positions.
     @dev Requires WETH approval if YES sell proceeds are unable to repay the principal.
@@ -113,18 +114,20 @@ def unwind():
     account: CreditAccount = baseline.getCreditAccount(msg.sender)
     debt: uint256 = account.principal + account.interest
     assert debt > 0  # dev: no debt
-    pac.flashLoanSimple(self, weth.address, debt, _abi_encode(msg.sender), 0)
+    pac.flashLoanSimple(self, weth.address, debt, _abi_encode(msg.sender, price_limit), 0)
 
 
 @external
 def executeOperation(asset: address, amount: uint256, premium: uint256, initiator: address, params: Bytes[128]) -> bool:
     assert msg.sender == pac.address  # dev: must come from pac pool
     assert initiator == self  # dev: must be self-initiated
-    user: address = _abi_decode(params, address)
+    user: address = empty(address)
+    price_limit: uint160 = empty(uint160)
+    user, price_limit = _abi_decode(params, (address, uint160))
     cash: uint256 = baseline.repay(user, amount)
     yes.transferFrom(user, self, cash)
-    yes.transfer(fee_recipient, cash / 500)  # 0.2% fee for unwind
-    self.sell_yes()
+    yes.transfer(fee_recipient, cash / 1000)  # 0.1% fee for unwind
+    self.sell_yes(price_limit)
     weth_balance: uint256 = weth.balanceOf(self)
     # pull additional weth from the user if yes sell proceeds are insufficient
     if amount + premium > weth_balance:
@@ -136,7 +139,7 @@ def executeOperation(asset: address, amount: uint256, premium: uint256, initiato
 
 
 @internal
-def buy_yes():
+def buy_yes(price_limit: uint160):
     amount: uint256 = weth.balanceOf(self)
     params: ExactInputSingleParams = ExactInputSingleParams({
         token_in: weth.address,
@@ -146,13 +149,13 @@ def buy_yes():
         deadline: block.timestamp,
         amount_in: amount,
         amount_out_minimum: 0,
-        sqrt_price_limit_x96: 0,
+        sqrt_price_limit_x96: price_limit,
     })
     router.exactInputSingle(params)
 
 
 @internal
-def sell_yes():
+def sell_yes(price_limit: uint160):
     amount: uint256 = yes.balanceOf(self)
     params: ExactInputSingleParams = ExactInputSingleParams({
         token_in: yes.address,
@@ -162,6 +165,6 @@ def sell_yes():
         deadline: block.timestamp,
         amount_in: amount,
         amount_out_minimum: 0,
-        sqrt_price_limit_x96: 0,
+        sqrt_price_limit_x96: price_limit,
     })
     router.exactInputSingle(params)
