@@ -95,16 +95,32 @@ def unwind():
     yes: ERC20 = ERC20(YES)
     pac: FlashLoan = FlashLoan(PAC_POOL)
     baseline: Baseline = Baseline(BASELINE)
-    
-    account: CreditAccount = Baseline(BASELINE).getCreditAccount(msg.sender)
-    debt: uint256 = account.principal + account.interest
-    
-    weth.transferFrom(msg.sender, self, debt)
-    cash: uint256 = baseline.repay(msg.sender, debt)
 
-    yes.transferFrom(msg.sender, self, cash)
+    acc: CreditAccount = Baseline(BASELINE).getCreditAccount(msg.sender)
+    pac.flashLoanSimple(self, WETH, acc.principal + acc.interest, _abi_encode(msg.sender), 0)
+
+
+@external
+def executeOperation(asset: address, amount: uint256, premium: uint256, initiator: address, params: Bytes[128]) -> bool:
+    assert msg.sender == PAC_POOL
+    assert initiator == self
+
+    weth: ERC20 = ERC20(WETH)
+    yes: ERC20 = ERC20(YES)
+    baseline: Baseline = Baseline(BASELINE)
+
+    user: address = _abi_decode(params, address)
+    cash: uint256 = baseline.repay(user, amount)
+    yes.transferFrom(user, self, cash)
     self.sell_yes()
-    weth.transfer(msg.sender, weth.balanceOf(self))
+    weth_balance: uint256 = weth.balanceOf(self)
+    # pull additional weth from the user if yes sell proceeds are insufficient
+    if amount + premium > weth_balance:
+        weth.transferFrom(user, self, amount + premium - weth_balance)
+    else:
+        weth.transfer(user, weth_balance - amount - premium)
+
+    return True
 
 
 @internal
@@ -137,22 +153,3 @@ def sell_yes():
         sqrt_price_limit_x96: 0,
     })
     UniswapRouter(ROUTER).exactInputSingle(params)
-
-
-@payable
-@external
-def flash():
-    # send flash loan premium as value
-    pac: FlashLoan = FlashLoan(PAC_POOL)
-    pac.flashLoanSimple(self, WETH, 10**18, b'', 0)
-
-
-@external
-def executeOperation(asset: address, amount: uint256, premium: uint256, initiator: address, params: Bytes[128]) -> bool:
-    assert msg.sender == PAC_POOL
-    assert initiator == self
-
-    weth: Weth = Weth(WETH)
-    weth.deposit(value=premium)
-
-    return True
