@@ -15,6 +15,13 @@ struct ExactInputSingleParams:
     amount_out_minimum: uint256
     sqrt_price_limit_x96: uint160
 
+struct CreditAccount:
+    principal: uint256
+    interest: uint256
+    collateral: uint256
+    expiry: uint256
+    last_floor: uint256
+
 interface Weth:
     def deposit(): payable
     def withdraw(amount: uint256): nonpayable
@@ -24,6 +31,8 @@ interface FlashLoan:
 
 interface Baseline:
     def borrow(user: address, amount: uint256, add_days: uint256) -> Borrow: nonpayable
+    def repay(user: address, amount: uint256) -> uint256: nonpayable
+    def getCreditAccount(user: address) -> CreditAccount: view
 
 interface UniswapRouter:
     def exactInputSingle(params: ExactInputSingleParams) -> uint256: payable
@@ -39,8 +48,13 @@ def __init__():
     weth: ERC20 = ERC20(WETH)
     yes: ERC20 = ERC20(YES)
 
+    # pac pulls weth on flash loan repay
     weth.approve(PAC_POOL, max_value(uint256))
+    # router pulls weth on swap
     weth.approve(ROUTER, max_value(uint256))
+    # baseline pulls weth on repay
+    weth.approve(BASELINE, max_value(uint256))
+    # baseline pulls yes on borrow
     yes.approve(BASELINE, max_value(uint256))
 
 
@@ -83,6 +97,22 @@ def buy_yes():
         sqrt_price_limit_x96: 0,
     })
     UniswapRouter(ROUTER).exactInputSingle(params)
+
+
+@external
+def unwind():
+    """
+    Unwind a position using a flash loan. Requires a small amount of WETH for a loan fee.
+    """
+    weth: ERC20 = ERC20(WETH)
+    pac: FlashLoan = FlashLoan(PAC_POOL)
+    baseline: Baseline = Baseline(BASELINE)
+    
+    account: CreditAccount = Baseline(BASELINE).getCreditAccount(msg.sender)
+    debt: uint256 = account.principal + account.interest
+    
+    weth.transferFrom(msg.sender, self, debt)
+    baseline.repay(msg.sender, debt)
 
 
 @payable
