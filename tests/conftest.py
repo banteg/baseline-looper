@@ -7,8 +7,13 @@ def dev(accounts):
 
 
 @pytest.fixture
-def whale(accounts):
+def user(accounts):
     return accounts[1]
+
+
+@pytest.fixture
+def whale(accounts):
+    return accounts[2]
 
 
 @pytest.fixture
