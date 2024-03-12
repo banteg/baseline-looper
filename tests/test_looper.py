@@ -54,6 +54,9 @@ def test_loop_borrow(weth, yes, router, looper, baseline, dev):
     looper.loop("10 ether", 30, 10, sender=dev)
     print_status()
 
+    yes.approve(looper, 2**256 - 1, sender=dev)
     tx = looper.unwind(sender=dev)
     tx.show_trace()
     print_status()
+
+    print(yes.balanceOf(looper) / 1e18, "recovered")

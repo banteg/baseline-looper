@@ -52,6 +52,8 @@ def __init__():
     weth.approve(PAC_POOL, max_value(uint256))
     # router pulls weth on swap
     weth.approve(ROUTER, max_value(uint256))
+    # router pulls yes on swap
+    yes.approve(ROUTER, max_value(uint256))
     # baseline pulls weth on repay
     weth.approve(BASELINE, max_value(uint256))
     # baseline pulls yes on borrow
@@ -83,6 +85,28 @@ def loop(amount: uint256, add_days: uint256, num_loops: uint256):
             weth.transferFrom(msg.sender, self, borrow.principal)
             self.buy_yes()
 
+
+@external
+def unwind():
+    """
+    Unwind a position using a flash loan. Requires a small amount of WETH for a loan fee.
+    """
+    weth: ERC20 = ERC20(WETH)
+    yes: ERC20 = ERC20(YES)
+    pac: FlashLoan = FlashLoan(PAC_POOL)
+    baseline: Baseline = Baseline(BASELINE)
+    
+    account: CreditAccount = Baseline(BASELINE).getCreditAccount(msg.sender)
+    debt: uint256 = account.principal + account.interest
+    
+    weth.transferFrom(msg.sender, self, debt)
+    cash: uint256 = baseline.repay(msg.sender, debt)
+
+    yes.transferFrom(msg.sender, self, cash)
+    self.sell_yes()
+    weth.transfer(msg.sender, weth.balanceOf(self))
+
+
 @internal
 def buy_yes():
     amount: uint256 = ERC20(WETH).balanceOf(self)
@@ -99,20 +123,20 @@ def buy_yes():
     UniswapRouter(ROUTER).exactInputSingle(params)
 
 
-@external
-def unwind():
-    """
-    Unwind a position using a flash loan. Requires a small amount of WETH for a loan fee.
-    """
-    weth: ERC20 = ERC20(WETH)
-    pac: FlashLoan = FlashLoan(PAC_POOL)
-    baseline: Baseline = Baseline(BASELINE)
-    
-    account: CreditAccount = Baseline(BASELINE).getCreditAccount(msg.sender)
-    debt: uint256 = account.principal + account.interest
-    
-    weth.transferFrom(msg.sender, self, debt)
-    baseline.repay(msg.sender, debt)
+@internal
+def sell_yes():
+    amount: uint256 = ERC20(YES).balanceOf(self)
+    params: ExactInputSingleParams = ExactInputSingleParams({
+        token_in: YES,
+        token_out: WETH,
+        fee: 10000,
+        recipient: self,
+        deadline: block.timestamp,
+        amount_in: amount,
+        amount_out_minimum: 0,
+        sqrt_price_limit_x96: 0,
+    })
+    UniswapRouter(ROUTER).exactInputSingle(params)
 
 
 @payable
