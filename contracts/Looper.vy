@@ -81,7 +81,7 @@ def __init__():
 
 @payable
 @external
-def loop(amount: uint256, num_loops: uint256, add_days: uint256, price_limit: uint160) -> CreditAccount:
+def loop(amount: uint256, num_loops: uint256, add_days: uint256) -> CreditAccount:
     """
     @notice Loop with WETH. Buys YES and borrows WETH for a number of times.
     @dev Requires WETH approval to pull borrowed WETH multiple times.
@@ -92,7 +92,7 @@ def loop(amount: uint256, num_loops: uint256, add_days: uint256, price_limit: ui
     borrow: Borrow = empty(Borrow)
 
     weth.transferFrom(msg.sender, self, amount)
-    self.buy_yes(price_limit)
+    self.buy_yes()
 
     for i in range(70):
         if i == num_loops:
@@ -102,46 +102,45 @@ def loop(amount: uint256, num_loops: uint256, add_days: uint256, price_limit: ui
         borrow = baseline.borrow(msg.sender, yes.balanceOf(self), days)
         if i < num_loops - 1:
             weth.transferFrom(msg.sender, self, borrow.principal)
-            self.buy_yes(price_limit)
+            self.buy_yes()
 
     return baseline.getCreditAccount(msg.sender)
 
 
 @external
-def unwind(price_limit: uint160):
+def unwind(min_out: uint256) -> uint256:
     """
     @notice Unwind a credit account using a flash loan. Allows unwinding underwater positions.
-    @dev Requires WETH approval if YES sell proceeds are unable to repay the principal.
+    @dev
+        Requires YES approval to sell the unlocked collateral.
+        Requires WETH approval if YES sell proceeds are unable to repay the principal.
+    @param min_out Minimum amount of WETH returened to the user after unwind.
+    @return output Amount of WETH recovered.
     """
     account: CreditAccount = baseline.getCreditAccount(msg.sender)
     debt: uint256 = account.principal + account.interest
     assert debt > 0  # dev: no debt
-    pac.flashLoanSimple(self, weth.address, debt, _abi_encode(msg.sender, price_limit), 0)
+    pac.flashLoanSimple(self, weth.address, debt, _abi_encode(msg.sender), 0)
+    output: uint256 = weth.balanceOf(self)
+    assert output >= min_out  # dev: insufficient output
+    weth.transfer(msg.sender, output)
+    return output
 
 
 @external
 def executeOperation(asset: address, amount: uint256, premium: uint256, initiator: address, params: Bytes[128]) -> bool:
     assert msg.sender == pac.address  # dev: must come from pac pool
     assert initiator == self  # dev: must be self-initiated
-    user: address = empty(address)
-    price_limit: uint160 = empty(uint160)
-    user, price_limit = _abi_decode(params, (address, uint160))
+    user: address = _abi_decode(params, address)
     cash: uint256 = baseline.repay(user, amount)
     yes.transferFrom(user, self, cash)
     yes.transfer(fee_recipient, cash / 1000)  # 0.1% fee for unwind
-    self.sell_yes(price_limit)
-    weth_balance: uint256 = weth.balanceOf(self)
-    # pull additional weth from the user if yes sell proceeds are insufficient
-    if amount + premium > weth_balance:
-        weth.transferFrom(user, self, amount + premium - weth_balance)
-    else:
-        weth.transfer(user, weth_balance - amount - premium)
-
+    self.sell_yes()
     return True
 
 
 @internal
-def buy_yes(price_limit: uint160):
+def buy_yes():
     amount: uint256 = weth.balanceOf(self)
     params: ExactInputSingleParams = ExactInputSingleParams({
         token_in: weth.address,
@@ -151,13 +150,13 @@ def buy_yes(price_limit: uint160):
         deadline: block.timestamp,
         amount_in: amount,
         amount_out_minimum: 0,
-        sqrt_price_limit_x96: price_limit,
+        sqrt_price_limit_x96: 0,
     })
     router.exactInputSingle(params)
 
 
 @internal
-def sell_yes(price_limit: uint160):
+def sell_yes():
     amount: uint256 = yes.balanceOf(self)
     params: ExactInputSingleParams = ExactInputSingleParams({
         token_in: yes.address,
@@ -167,6 +166,6 @@ def sell_yes(price_limit: uint160):
         deadline: block.timestamp,
         amount_in: amount,
         amount_out_minimum: 0,
-        sqrt_price_limit_x96: price_limit,
+        sqrt_price_limit_x96: 0,
     })
     router.exactInputSingle(params)
