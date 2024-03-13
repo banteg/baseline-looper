@@ -1,6 +1,7 @@
 # @version 0.3.10
 # @author banteg
 # @notice Leverage loop into YES or unwind your position without needing the WETH.
+# @custom:contract-version 0.1.0
 from vyper.interfaces import ERC20
 
 struct Borrow:
