@@ -80,6 +80,10 @@ def loop(amount: uint256, num_loops: uint256, add_days: uint256) -> CreditAccoun
     """
     @notice Loop with WETH. Buys YES and borrows WETH for a number of times.
     @dev Requires WETH approval to pull borrowed WETH multiple times.
+    @param amount How much WETH to use for looping.
+    @param num_loops [1-69] How many times to do the buy-lock-borrow loop.
+    @param add_days How many days to add to the credit account expiry.
+    @returns The resulting state of the credit account.
     """
     assert num_loops > 0  # dev: min 1 loop
     assert num_loops < 70  # dev: max 69 loops
@@ -105,10 +109,8 @@ def loop(amount: uint256, num_loops: uint256, add_days: uint256) -> CreditAccoun
 @external
 def unwind(min_out: uint256) -> uint256:
     """
-    @notice Unwind a credit account using a flash loan. Allows unwinding underwater positions.
-    @dev
-        Requires YES approval to sell the unlocked collateral.
-        Requires WETH approval if YES sell proceeds are unable to repay the principal.
+    @notice Unwind a credit account using a flash loan.
+    @dev Requires YES approval to sell the unlocked collateral.
     @param min_out Minimum amount of WETH returened to the user after unwind.
     @return output Amount of WETH recovered.
     """
