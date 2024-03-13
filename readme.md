@@ -38,3 +38,7 @@ ape run yes unwind --network blast:mainnet:geth
 ```
 
 Unwind fees: 0.1% service fee, 0.01% flash loan fee.
+
+## Deployed contracts
+
+- v0.1.0 = 0x2cb41A98b6b01e50308AEDD754138510e2225933

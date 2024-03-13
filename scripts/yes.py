@@ -36,7 +36,7 @@ def get_looper(is_fork):
     if is_fork:
         return project.Looper.deploy(sender=accounts.test_accounts[0])
     else:
-        raise NotImplementedError("deployment tbd")
+        raise project.Looper.at("0x2cb41A98b6b01e50308AEDD754138510e2225933")
 
 
 @cli.command(cls=ConnectedProviderCommand)
