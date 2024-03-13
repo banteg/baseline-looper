@@ -1,6 +1,5 @@
 import pytest
 import toolstr
-import ape
 
 
 def test_borrow(weth, yes, router, looper, baseline, user):
@@ -40,12 +39,12 @@ def test_loop_borrow(weth, yes, router, looper, baseline, dev, user, whale, prof
 
     weth.deposit(value="100 ether", sender=user)
     weth.approve(looper, 2**256 - 1, sender=user)
-    looper.loop("10 ether", 10, 30, 0, sender=user)
+    looper.loop("10 ether", 8, 30, sender=user)
     print_status()
 
     # a whale buys yes
     if profitable:
-        weth.deposit(value="1000 ether", sender=whale)
+        weth.deposit(value="3000 ether", sender=whale)
         weth.approve(router, 2**256 - 1, sender=whale)
         router.exactInputSingle(
             [weth, yes, 10000, whale, 2**256 - 1, weth.balanceOf(whale), 0, 0],
@@ -53,9 +52,16 @@ def test_loop_borrow(weth, yes, router, looper, baseline, dev, user, whale, prof
         )
 
     yes.approve(looper, 2**256 - 1, sender=user)
-    looper.unwind(0, sender=user)
-    print_status()
+    print(
+        "est profit",
+        (looper.unwind.call(0, sender=user) + weth.balanceOf(user) - 1e20) / 1e18,
+    )
+    if profitable:
+        tx = looper.unwind("10 ether", sender=user)
+    else:
+        tx = looper.unwind(0, sender=user)
 
+    print_status()
     print(yes.balanceOf(dev) / 1e18, "fees")
 
 
@@ -63,4 +69,4 @@ def test_double_wind(weth, looper, user, baseline, yes):
     weth.deposit(value="100 ether", sender=user)
     weth.approve(looper, 2**256 - 1, sender=user)
     for i in range(1, 4):
-        looper.loop("10 ether", i, 30 if i == 1 else 0, 0, sender=user)
+        looper.loop("10 ether", i, 30 if i == 1 else 0, sender=user)
