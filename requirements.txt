@@ -1,0 +1,8 @@
+eth-ape>=0.7.11
+ape-blast
+ape-foundry
+ape-etherscan
+ape-vyper
+evmchains
+toolstr
+rich
