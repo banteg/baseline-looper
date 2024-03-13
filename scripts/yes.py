@@ -59,7 +59,6 @@ def loop(network):
     wrap_amount = click.prompt(
         f"you have {eth_fmt} eth and {weth_fmt} weth. the contract accepts weth. type how much eth you want to wrap.",
         type=click.FloatRange(min=0, max=eth_balance / 1e18, clamp=True),
-        default=100,
     )
     if wrap_amount > 0:
         click.secho(f"wrapping {wrap_amount} eth into weth", fg="green")
@@ -71,7 +70,7 @@ def loop(network):
     amount = click.prompt(
         f"how much to ape ser? you have {weth_fmt} weth",
         type=click.FloatRange(min=0, max=weth_balance / 1e18, clamp=True),
-        default=100,
+        default=weth_balance / 1e18,
     )
 
     weth_allowance = weth.allowance(user, looper)
@@ -80,12 +79,12 @@ def loop(network):
         weth.approve(looper, 2**256 - 1, sender=user)
 
     num_loops = click.prompt(
-        "how many times to loop ser?", type=click.IntRange(min=1, max=69), default=5
+        "how many times to loop ser?", type=click.IntRange(min=1, max=69), default=8
     )
     add_days = click.prompt(
         "how many days to add to the credit account? you can set to 0 if you already have a position.",
         type=click.IntRange(0, 365),
-        default=30,
+        default=30 if credit_account.expiry == 0 else 0,
     )
     if not click.confirm(
         f"loop {amount} weth for {num_loops} times and add {add_days} days, correct?"
