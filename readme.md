@@ -1,6 +1,6 @@
 # Baseline Looper
 
-*Loop into [YES]((https://app.baseline.markets/) or unwind a credit account using a flash loan*
+*Loop into [YES](https://app.baseline.markets/) or unwind a credit account using a flash loan*
 
 ## Install
 
@@ -24,7 +24,7 @@ ape run yes loop --network blast:mainnet:geth
 
 A residual WETH will be sent back to you. You can buy more YES with it if you want.
 
-If you just want to try it out, install [Foundry](https://book.getfoundry.sh/getting-started/installation) and use the `blast:mainnet-fork:foundry` network.
+If you just want to try it out, install [Foundry](https://book.getfoundry.sh/getting-started/installation) and use `blast:mainnet-fork:foundry` network.
 
 ### UNWIND from ze GRIND
 
