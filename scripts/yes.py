@@ -23,20 +23,29 @@ def show_credit_account(acc):
     )
 
 
+def get_account(is_fork):
+    if is_fork:
+        return accounts.test_accounts[0]
+    else:
+        return accounts.load(
+            click.prompt("ape account", type=click.Choice(list(accounts.aliases)))
+        )
+
+
+def get_looper(is_fork):
+    if is_fork:
+        return project.Looper.deploy(sender=accounts.test_accounts[0])
+    else:
+        raise NotImplementedError("deployment tbd")
+
+
 @cli.command(cls=ConnectedProviderCommand)
-def loop():
+def loop(network):
+    is_fork = "-fork" in network.name
     baseline = project.baseline.at("0x14eB8d9b6e19842B5930030B18c50B0391561f27")
     weth = project.weth.at("0x4300000000000000000000000000000000000004")
-    yes = project.basset.at("0x20fE91f17ec9080E3caC2d688b4EcB48C5aC3a9C")
-    router = project.router.at("0x337827814155ECBf24D20231fCA4444F530C0555")
-    quoter = project.quoter.at("0x3b299f65b47c0bfAEFf715Bc73077ba7A0a685bE")
-    # TODO: replace w a production contract
-    looper = project.Looper.deploy(sender=accounts.test_accounts[0])
-
-    # user = accounts.load(
-    #     click.prompt("ape account", type=click.Choice(list(accounts.aliases)))
-    # )
-    user = accounts.test_accounts[1]
+    looper = get_looper(is_fork)
+    user = get_account(is_fork)
     print(user)
 
     credit_account = baseline.getCreditAccount(user)
@@ -49,7 +58,7 @@ def loop():
 
     wrap_amount = click.prompt(
         f"you have {eth_fmt} eth and {weth_fmt} weth. the contract accepts weth. type how much eth you want to wrap.",
-        type=click.FloatRange(min=0, max=eth_balance / 1e18),
+        type=click.FloatRange(min=0, max=eth_balance / 1e18, clamp=True),
         default=100,
     )
     if wrap_amount > 0:
@@ -61,7 +70,7 @@ def loop():
 
     amount = click.prompt(
         f"how much to ape ser? you have {weth_fmt} weth",
-        type=click.FloatRange(min=0, max=weth_balance / 1e18),
+        type=click.FloatRange(min=0, max=weth_balance / 1e18, clamp=True),
         default=100,
     )
 
@@ -83,23 +92,41 @@ def loop():
     ):
         return
 
-    click.secho(f"looping", fg="green")
-    # TODO slippage calc
-    acc_after = looper.loop.call(
-        int(amount * 1e18), num_loops, add_days, 0, sender=user
-    )
-    tokens_bought = acc_after.collateral - credit_account.collateral
-    print("tokens bought", toolstr.format(tokens_bought / 1e18))
-    res = quoter.quoteExactOutputSingle.call((weth, yes, tokens_bought, 10000, 0))
-    limit_price = res.sqrtPriceX96After
-    # print("price", (limit_price / 2**96) ** 2)
-    # show_credit_account(acc_after)
-    limit_price = int(((limit_price / 2**96) ** 2 * 1.01) ** 0.5 * 2**96)
-    looper.loop(int(amount * 1e18), num_loops, add_days, limit_price, sender=user)
+    click.secho("looping in", fg="green")
+    looper.loop(int(amount * 1e18), num_loops, add_days, sender=user)
+
     credit_account = baseline.getCreditAccount(user)
     show_credit_account(credit_account)
 
 
 @cli.command(cls=ConnectedProviderCommand)
-def unwind():
-    pass
+def unwind(network):
+    is_fork = "-fork" in network.name
+    baseline = project.baseline.at("0x14eB8d9b6e19842B5930030B18c50B0391561f27")
+    weth = project.weth.at("0x4300000000000000000000000000000000000004")
+    yes = project.basset.at("0x20fE91f17ec9080E3caC2d688b4EcB48C5aC3a9C")
+    looper = get_looper(is_fork)
+    user = get_account(is_fork)
+    print(user)
+
+    credit_account = baseline.getCreditAccount(user)
+    show_credit_account(credit_account)
+    assert credit_account.principal > 0, "nothing to unwind"
+
+    if yes.allowance(user, looper) < credit_account.collateral:
+        click.secho("approve looper to pull your yes", fg="green")
+        yes.approve(looper, 2**256 - 1, sender=user)
+
+    output = looper.unwind.call(0, sender=user)
+    output_fmt = toolstr.format(output / 1e18)
+    print(f"the contract can unwind {output_fmt} weth from your position")
+    print("service fee: 0.1%, flash loan fee: 0.01%")
+    if not click.confirm("does this sound good?"):
+        return
+
+    min_output = int(output * 0.995)
+    weth_a = weth.balanceOf(user)
+    looper.unwind(min_output, sender=user)
+    weth_b = weth.balanceOf(user)
+    weth_diff_fmt = toolstr.format((weth_b - weth_a) / 1e18)
+    print(f"recovered {weth_diff_fmt} weth")
