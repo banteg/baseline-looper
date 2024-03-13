@@ -63,16 +63,11 @@ def __init__():
     blast = Blast(0x4300000000000000000000000000000000000002)
     fee_recipient = msg.sender
 
-    # pac pulls weth on flash loan repay
-    weth.approve(pac.address, max_value(uint256))
-    # router pulls weth on swap
-    weth.approve(router.address, max_value(uint256))
-    # router pulls yes on swap
-    yes.approve(router.address, max_value(uint256))
-    # baseline pulls weth on repay
-    weth.approve(baseline.address, max_value(uint256))
-    # baseline pulls yes on borrow
-    yes.approve(baseline.address, max_value(uint256))
+    yes.approve(baseline.address, max_value(uint256))   # baseline pulls yes on borrow
+    weth.approve(baseline.address, max_value(uint256))  # baseline pulls weth on repay
+    weth.approve(pac.address, max_value(uint256))       # pac pulls weth on flash loan repay
+    weth.approve(router.address, max_value(uint256))    # router pulls weth on swap
+    yes.approve(router.address, max_value(uint256))     # router pulls yes on swap
 
     # blast specific
     blast.configureClaimableGas()

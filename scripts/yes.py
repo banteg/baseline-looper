@@ -74,7 +74,7 @@ def loop():
         "how many times to loop ser?", type=click.IntRange(min=1, max=69), default=5
     )
     add_days = click.prompt(
-        "how many days to add to the credit accounts? you can set to 0 if you already have a position.",
+        "how many days to add to the credit account? you can set to 0 if you already have a position.",
         type=click.IntRange(0, 365),
         default=30,
     )
@@ -92,8 +92,8 @@ def loop():
     print("tokens bought", toolstr.format(tokens_bought / 1e18))
     res = quoter.quoteExactOutputSingle.call((weth, yes, tokens_bought, 10000, 0))
     limit_price = res.sqrtPriceX96After
-    print("price", (limit_price / 2**96) ** 2)
-    show_credit_account(acc_after)
+    # print("price", (limit_price / 2**96) ** 2)
+    # show_credit_account(acc_after)
     limit_price = int(((limit_price / 2**96) ** 2 * 1.01) ** 0.5 * 2**96)
     looper.loop(int(amount * 1e18), num_loops, add_days, limit_price, sender=user)
     credit_account = baseline.getCreditAccount(user)
