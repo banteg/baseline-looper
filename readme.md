@@ -39,6 +39,41 @@ ape run yes unwind --network blast:mainnet:geth
 
 Unwind fees: 0.1% service fee, 0.01% flash loan fee.
 
+## Interact using Foundry
+
+1. Install [Foundry](https://book.getfoundry.sh/getting-started/installation)
+2. Import wallet (see other options [here](https://book.getfoundry.sh/reference/cli/cast/wallet/import)) `cast wallet import anon --interactive`
+3. Set up the environment
+```sh
+export looper=0x2cb41A98b6b01e50308AEDD754138510e2225933
+export yes=0x20fE91f17ec9080E3caC2d688b4EcB48C5aC3a9C
+export weth=0x4300000000000000000000000000000000000004
+export baseline=0x14eB8d9b6e19842B5930030B18c50B0391561f27
+export ETH_KEYSTORE_ACCOUNT=anon  # the name of your imported wallet
+export ETH_FROM=0xYourAddy  # set to your wallet address
+export ETH_RPC_URL=https://rpc.blast.io
+```
+
+### Loop with Foundry
+
+1. Approve WETH `cast send $weth "approve(address,uint)" $looper $(cast max-uint)`
+    - Note that you need to approve more WETH than the amount you are looping.
+2. Loop in `cast send $looper "loop(uint,uint,uint)" $(cast --to-wei 10 ether) 10 7`
+    - The params are `amount` (in wei), `num_loops` (1-69), `add_days` (use 0 if you already have a credit account)
+
+## Unwind with Foundry
+
+To see your credit account, you can do this:
+`cast call $baseline "getCreditAccount(address)(uint,uint,uint,uint,uint) $ETH_FROM`
+
+the returned values are `principal`, `interest`, `collateral`, `expiry`, `lastFloor`.
+
+1. Approve YES `cast send $yes "approve(address,uint)" $looper $(cast max-uint)`
+    - You can also approve the exact amount of YES locked up as `collateral`
+2. Estimate output `cast call $looper "unwind(uint)(uint)" 0`
+3. Unwind the position `cast send $looper "unwind(uint)(uint)" 0`
+    - Instead of 0 you can specify the minimum WETH returned. A good value would be `estimate * 0.995` to protect from slippage.
+
 ## Deployed contracts
 
 - v0.1.0 = 0x2cb41A98b6b01e50308AEDD754138510e2225933
