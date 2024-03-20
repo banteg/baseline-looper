@@ -57,14 +57,14 @@ blast: immutable(Blast)
 fee_recipient: immutable(address)
 
 @external
-def __init__():
+def __init__(fees_to: address):
     pac = FlashLoan(0xd2499b3c8611E36ca89A70Fda2A72C49eE19eAa8)
     router = SwapRouter(0x337827814155ECBf24D20231fCA4444F530C0555)
     weth = ERC20(0x4300000000000000000000000000000000000004)
     yes = ERC20(0x20fE91f17ec9080E3caC2d688b4EcB48C5aC3a9C)
     baseline = Baseline(0x14eB8d9b6e19842B5930030B18c50B0391561f27)
     blast = Blast(0x4300000000000000000000000000000000000002)
-    fee_recipient = msg.sender
+    fee_recipient = fees_to
 
     yes.approve(baseline.address, max_value(uint256))   # baseline pulls yes on borrow
     weth.approve(baseline.address, max_value(uint256))  # baseline pulls weth on repay
