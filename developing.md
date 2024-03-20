@@ -2,7 +2,7 @@
 
 ## contracts and abis
 
-- looper - 0x2cb41A98b6b01e50308AEDD754138510e2225933 - [abi](./contracts/Looper.vy)
+- looper - 0x4494d7Ce28c1AF6F76854258476e099eb80f6D19 - [abi](./contracts/Looper.vy)
 - weth - 0x4300000000000000000000000000000000000004 - [abi](./contracts/weth.json)
 - yes - 0x20fE91f17ec9080E3caC2d688b4EcB48C5aC3a9C - [abi](./contracts/basset.json)
 - baseline - 0x14eB8d9b6e19842B5930030B18c50B0391561f27 - [abi](./contracts/baseline.json)
