@@ -2,7 +2,7 @@
 # @author banteg
 # @name BaselineLooper
 # @notice Leverage loop into YES or unwind your position without needing the WETH.
-# @custom:contract-version 0.1.0
+# @custom:contract-version 0.2.0
 from vyper.interfaces import ERC20
 
 struct Borrow:
@@ -38,6 +38,7 @@ interface Baseline:
     def borrow(user: address, amount: uint256, add_days: uint256) -> Borrow: nonpayable
     def repay(user: address, amount: uint256) -> uint256: nonpayable
     def getCreditAccount(user: address) -> CreditAccount: view
+    def getFloorPrice() -> uint256: view
 
 interface SwapRouter:
     def exactInputSingle(params: ExactInputSingleParams) -> uint256: payable
@@ -117,6 +118,13 @@ def unwind(min_out: uint256) -> uint256:
     @return Amount of WETH recovered.
     """
     account: CreditAccount = baseline.getCreditAccount(msg.sender)
+    floor_price: uint256 = baseline.getFloorPrice()
+
+    # bump to the lastest floor price
+    if floor_price > account.lastFloor:
+        baseline.borrow(msg.sender, 0, 0)
+        account = baseline.getCreditAccount(msg.sender)
+    
     debt: uint256 = account.principal + account.interest
     assert debt > 0  # dev: no debt
     pac.flashLoanSimple(self, weth.address, debt, _abi_encode(msg.sender), 0)
