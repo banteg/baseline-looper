@@ -28,7 +28,7 @@ def yes(project):
 
 @pytest.fixture
 def looper(project, dev):
-    return project.Looper.deploy(sender=dev)
+    return project.Looper.deploy(dev, sender=dev)
 
 
 @pytest.fixture

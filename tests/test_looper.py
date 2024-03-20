@@ -27,8 +27,9 @@ def test_borrow(weth, yes, router, looper, baseline, user):
 
 
 @pytest.mark.parametrize("profitable", [True, False])
+@pytest.mark.parametrize("partial", [True, False])
 def test_loop_borrow(
-    weth, yes, router, quoter, looper, baseline, dev, user, whale, profitable
+    weth, yes, router, quoter, looper, baseline, dev, user, whale, profitable, partial
 ):
     def print_status():
         acc = baseline.getCreditAccount(user)
@@ -65,9 +66,14 @@ def test_loop_borrow(
         assert baseline.floorTick() > floor_tick, "not shifted"
 
     yes.approve(looper, 2**256 - 1, sender=user)
-    output = looper.unwind.call(0, sender=user)
+    if partial:
+        output = looper.unwind.call(0, "2 ether", sender=user)
+        receipt = looper.unwind(output, "2 ether", sender=user)
+    else:
+        output = looper.unwind.call(0, sender=user)
+        receipt = looper.unwind(output, sender=user)
+
     print("output", toolstr.format(output / 1e18))
-    receipt = looper.unwind(output, sender=user)
     print(list(receipt.decode_logs(baseline.Borrow)))
     print_status()
 
