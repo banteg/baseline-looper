@@ -76,7 +76,6 @@ def __init__():
     blast.configureGovernor(msg.sender)
 
 
-@payable
 @external
 def loop(amount: uint256, num_loops: uint256, add_days: uint256) -> CreditAccount:
     """
@@ -92,8 +91,9 @@ def loop(amount: uint256, num_loops: uint256, add_days: uint256) -> CreditAccoun
     days: uint256 = add_days
     borrow: Borrow = empty(Borrow)
 
-    weth.transferFrom(msg.sender, self, amount)
-    self.buy_yes()
+    if amount > 0:
+        weth.transferFrom(msg.sender, self, amount)
+        self.buy_yes()
 
     for i in range(70):
         if i == num_loops:
