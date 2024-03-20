@@ -47,7 +47,7 @@ Unwind fees: 0.1% service fee, 0.01% flash loan fee.
 2. Import wallet (see other options [here](https://book.getfoundry.sh/reference/cli/cast/wallet/import)) `cast wallet import anon --interactive`
 3. Set up the environment
 ```sh
-export looper=0x2cb41A98b6b01e50308AEDD754138510e2225933
+export looper=0x4494d7Ce28c1AF6F76854258476e099eb80f6D19
 export yes=0x20fE91f17ec9080E3caC2d688b4EcB48C5aC3a9C
 export weth=0x4300000000000000000000000000000000000004
 export baseline=0x14eB8d9b6e19842B5930030B18c50B0391561f27
@@ -79,3 +79,7 @@ the returned values are `principal`, `interest`, `collateral`, `expiry`, `lastFl
 ## Deployed contracts
 
 - v0.1.0 = 0x2cb41A98b6b01e50308AEDD754138510e2225933
+- v0.2.0 = 0x4494d7Ce28c1AF6F76854258476e099eb80f6D19
+    - supports loop with 0 when the floor shifts
+    - maximizes efficiency by automatically claiming the boost on repay
+    - supports partial repays
