@@ -39,3 +39,8 @@ def baseline(project):
 @pytest.fixture
 def router(project):
     return project.router.at("0x337827814155ECBf24D20231fCA4444F530C0555")
+
+
+@pytest.fixture
+def quoter(project):
+    return project.quoter.at("0x3b299f65b47c0bfAEFf715Bc73077ba7A0a685bE")
