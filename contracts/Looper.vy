@@ -110,11 +110,12 @@ def loop(amount: uint256, num_loops: uint256, add_days: uint256) -> CreditAccoun
 
 
 @external
-def unwind(min_out: uint256) -> uint256:
+def unwind(min_out: uint256, amount: uint256 = max_value(uint256)) -> uint256:
     """
     @notice Unwind a credit account using a flash loan.
     @dev Requires YES approval to sell the unlocked collateral.
     @param min_out Minimum amount of WETH returened to the user after unwind.
+    @param amount Amount of WETH to flash loan for a partial unwind.
     @return Amount of WETH recovered.
     """
     account: CreditAccount = baseline.getCreditAccount(msg.sender)
@@ -125,7 +126,7 @@ def unwind(min_out: uint256) -> uint256:
         baseline.borrow(msg.sender, 0, 0)
         account = baseline.getCreditAccount(msg.sender)
     
-    debt: uint256 = account.principal + account.interest
+    debt: uint256 = min(account.principal + account.interest, amount)
     assert debt > 0  # dev: no debt
     pac.flashLoanSimple(self, weth.address, debt, _abi_encode(msg.sender), 0)
     output: uint256 = weth.balanceOf(self)
