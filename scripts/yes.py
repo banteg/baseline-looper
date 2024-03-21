@@ -116,9 +116,10 @@ def unwind(network):
         click.secho("approve looper to pull your yes", fg="green")
         yes.approve(looper, 2**256 - 1, sender=user)
 
-    output = looper.unwind.call(0, sender=user)
+    output, post_credit = looper.unwind.call(0, sender=user)
     output_fmt = toolstr.format(output / 1e18)
     print(f"the contract can unwind {output_fmt} weth from your position")
+    show_credit_account(post_credit)
     print("service fee: 0.1%, flash loan fee: 0.01%")
     if not click.confirm("does this sound good?"):
         return
