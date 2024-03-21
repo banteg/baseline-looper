@@ -36,7 +36,7 @@ def get_looper(is_fork):
     if is_fork:
         return project.Looper.deploy(sender=accounts.test_accounts[0])
     else:
-        return project.Looper.at("0x4494d7Ce28c1AF6F76854258476e099eb80f6D19")
+        return project.Looper.at("0xFfADb825D02f9E6e216cD836e16C33021a87Ec23")
 
 
 @cli.command(cls=ConnectedProviderCommand)
