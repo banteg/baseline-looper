@@ -2,7 +2,7 @@
 # @author banteg
 # @name BaselineLooper
 # @notice Leverage loop into YES or unwind your position without needing the WETH.
-# @custom:contract-version 0.2.0
+# @custom:contract-version 0.2.1
 from vyper.interfaces import ERC20
 
 struct Borrow:
@@ -110,13 +110,13 @@ def loop(amount: uint256, num_loops: uint256, add_days: uint256) -> CreditAccoun
 
 
 @external
-def unwind(min_out: uint256, amount: uint256 = max_value(uint256)) -> uint256:
+def unwind(min_out: uint256, amount: uint256 = max_value(uint256)) -> (uint256, CreditAccount):
     """
     @notice Unwind a credit account using a flash loan.
     @dev Requires YES approval to sell the unlocked collateral.
     @param min_out Minimum amount of WETH returened to the user after unwind.
     @param amount Amount of WETH to flash loan for a partial unwind.
-    @return Amount of WETH recovered.
+    @return Amount of WETH recovered and the post credit account state.
     """
     account: CreditAccount = baseline.getCreditAccount(msg.sender)
     floor_price: uint256 = baseline.getFloorPrice()
@@ -132,7 +132,8 @@ def unwind(min_out: uint256, amount: uint256 = max_value(uint256)) -> uint256:
     output: uint256 = weth.balanceOf(self)
     assert output >= min_out  # dev: insufficient output
     weth.transfer(msg.sender, output)
-    return output
+    account = baseline.getCreditAccount(msg.sender)
+    return output, account
 
 
 @external
