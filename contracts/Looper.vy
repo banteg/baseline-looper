@@ -1,6 +1,6 @@
 # @version 0.3.10
 # @author banteg
-# @name BaselineLooper
+# @title BaselineLooper
 # @notice Leverage loop into YES or unwind your position without needing the WETH.
 # @custom:contract-version 0.2.1
 from vyper.interfaces import ERC20
