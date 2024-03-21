@@ -31,8 +31,9 @@ def test_borrow(weth, yes, router, looper, baseline, user):
 def test_loop_borrow(
     weth, yes, router, quoter, looper, baseline, dev, user, whale, profitable, partial
 ):
-    def print_status():
-        acc = baseline.getCreditAccount(user)
+    def print_status(acc=None):
+        if acc is None:
+            acc = baseline.getCreditAccount(user)
         toolstr.print_table(
             [
                 ["principal", acc.principal / 1e18],
@@ -67,10 +68,12 @@ def test_loop_borrow(
 
     yes.approve(looper, 2**256 - 1, sender=user)
     if partial:
-        output = looper.unwind.call(0, "2 ether", sender=user)
+        output, post_acc = looper.unwind.call(0, "2 ether", sender=user)
+        print_status(post_acc)
         receipt = looper.unwind(output, "2 ether", sender=user)
     else:
-        output = looper.unwind.call(0, sender=user)
+        output, post_acc = looper.unwind.call(0, sender=user)
+        print_status(post_acc)
         receipt = looper.unwind(output, sender=user)
 
     print("output", toolstr.format(output / 1e18))
