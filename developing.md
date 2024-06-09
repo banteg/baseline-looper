@@ -1,11 +1,13 @@
 # frontend
 
+(this is outdated and concerns v1)
+
 ## contracts and abis
 
-- looper - 0x4494d7Ce28c1AF6F76854258476e099eb80f6D19 - [abi](./contracts/Looper.vy)
+- looper - 0x9525DFc8A9f6A036192c61204E12D5E2267FE8fc - [abi](./contracts/Looper.vy)
 - weth - 0x4300000000000000000000000000000000000004 - [abi](./contracts/weth.json)
-- yes - 0x20fE91f17ec9080E3caC2d688b4EcB48C5aC3a9C - [abi](./contracts/basset.json)
-- baseline - 0x14eB8d9b6e19842B5930030B18c50B0391561f27 - [abi](./contracts/baseline.json)
+- yes - 0x1a49351bdB4BE48C0009b661765D01ed58E8C2d8 - [abi](./contracts/BPOOLv1.json)
+- credt - 0x158d9270F7931d0eB48Efd72E62c0E9fFfE0E67b - [abi](./contracts/CREDTv1.json)
 
 ## general
 
@@ -25,15 +27,12 @@
     - `num_loops` [1, 69] - how many times to do buy-lock-borrow loop, default to some reasonable value like 10
     - `add_days` [0, 365] - how many days to add to the borrow position. if a user doesn't have an existing credit account (`credit_account.expiry == 0`), default to some reasonable value like 14 or 30, otherwise default to 0. higher value would mean a higher portion would be lost to interest.
 - show a simulation of how the user's credit account would be affected by the loop call.
-    - before: `baseline.getCreditAccount(user)`, returns `(principal, interest, collateral, expiry, lastFloor)`
-        - `principal` is the amount of debt in weth
-        - `interest` is the remaining interest to pay back in weth on repay
-            - the total debt to repay to unlock all collateral is principal + interest
+    - before: `credt.getCreditAccount(user)`, returns `(credit, collateral, expiry)`
+        - `credit` is the amount of borrowed plus interest in weth
         - `collateral` is the amount of locked yes tokens
         - `expiry` is a unix timestamp in seconds of when the position can be forfeited, 0 if the credit account is empty
-        - `lastFloor` is the floor price in wei when the user last borrowed. when the floor price rises, the user can borrow more.
     - after: `looper.loop.call(amount, num_loops, add_days)`
-        - returns the same struct as `baseline.getCreditAccount`
+        - returns the same struct as `credt.getCreditAccount`
 - write `looper.loop(amount, num_loops, add_days)` with the user-input values
 
 ## unwind

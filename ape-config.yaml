@@ -3,7 +3,7 @@ name: looper
 foundry:
   host: auto
 
-geth:
+node:
   blast:
     mainnet:
       uri: https://rpc.blast.io

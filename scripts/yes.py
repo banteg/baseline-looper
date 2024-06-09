@@ -13,8 +13,7 @@ def cli():
 def show_credit_account(acc):
     toolstr.print_table(
         [
-            ["principal, eth", acc.principal / 1e18],
-            ["interest, eth", acc.interest / 1e18],
+            ["credit, eth", acc.credit / 1e18],
             ["collateral, yes", acc.collateral / 1e18],
             ["expiry", datetime.utcfromtimestamp(acc.expiry)],
             ["last floor, eth", acc.lastFloor / 1e18],
@@ -36,19 +35,19 @@ def get_looper(is_fork):
     if is_fork:
         return project.Looper.deploy(sender=accounts.test_accounts[0])
     else:
-        return project.Looper.at("0xFfADb825D02f9E6e216cD836e16C33021a87Ec23")
+        return project.Looper.at("0x9525DFc8A9f6A036192c61204E12D5E2267FE8fc")
 
 
 @cli.command(cls=ConnectedProviderCommand)
 def loop(network):
     is_fork = "-fork" in network.name
-    baseline = project.baseline.at("0x14eB8d9b6e19842B5930030B18c50B0391561f27")
+    credt = project.CREDTv1.at("0x158d9270F7931d0eB48Efd72E62c0E9fFfE0E67b")
     weth = project.weth.at("0x4300000000000000000000000000000000000004")
     looper = get_looper(is_fork)
     user = get_account(is_fork)
     print(user)
 
-    credit_account = baseline.getCreditAccount(user)
+    credit_account = credt.getCreditAccount(user)
     show_credit_account(credit_account)
 
     eth_balance = user.balance
@@ -94,21 +93,21 @@ def loop(network):
     click.secho("looping in", fg="green")
     looper.loop(int(amount * 1e18), num_loops, add_days, sender=user)
 
-    credit_account = baseline.getCreditAccount(user)
+    credit_account = credt.getCreditAccount(user)
     show_credit_account(credit_account)
 
 
 @cli.command(cls=ConnectedProviderCommand)
 def unwind(network):
     is_fork = "-fork" in network.name
-    baseline = project.baseline.at("0x14eB8d9b6e19842B5930030B18c50B0391561f27")
+    credt = project.CREDTv1.at("0x158d9270F7931d0eB48Efd72E62c0E9fFfE0E67b")
     weth = project.weth.at("0x4300000000000000000000000000000000000004")
-    yes = project.basset.at("0x20fE91f17ec9080E3caC2d688b4EcB48C5aC3a9C")
+    yes = project.BPOOLv1.at("0x1a49351bdB4BE48C0009b661765D01ed58E8C2d8")
     looper = get_looper(is_fork)
     user = get_account(is_fork)
     print(user)
 
-    credit_account = baseline.getCreditAccount(user)
+    credit_account = credt.getCreditAccount(user)
     show_credit_account(credit_account)
     assert credit_account.principal > 0, "nothing to unwind"
 
