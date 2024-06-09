@@ -1,6 +1,6 @@
 # @version 0.3.10
 # @author banteg
-# @title BaselineLooper
+# @title BaselineV2 Looper
 # @notice Leverage loop into YES or unwind your position without needing the WETH.
 # @custom:contract-version 0.3.0
 from vyper.interfaces import ERC20
@@ -32,7 +32,7 @@ interface Weth:
 interface FlashLoan:
     def flashLoanSimple(receiverAddress: address, asset: address, amount: uint256, params: Bytes[128], referralCode: uint16): nonpayable
 
-interface Baseline:
+interface CreditFacility:
     def borrow(user: address, amount: uint256, add_days: uint256) -> Borrow: nonpayable
     def repay(user: address, amount: uint256) -> uint256: nonpayable
 
@@ -51,7 +51,7 @@ pac: immutable(FlashLoan)
 router: immutable(SwapRouter)
 weth: immutable(ERC20)
 yes: immutable(ERC20)
-baseline: immutable(Baseline)
+credit_facility: immutable(CreditFacility)
 credt: immutable(Credt)
 blast: immutable(Blast)
 fee_recipient: immutable(address)
@@ -62,13 +62,13 @@ def __init__(fees_to: address):
     router = SwapRouter(0x337827814155ECBf24D20231fCA4444F530C0555)
     weth = ERC20(0x4300000000000000000000000000000000000004)
     yes = ERC20(0x1a49351bdB4BE48C0009b661765D01ed58E8C2d8)
-    baseline = Baseline(0xd7E6ad255B3Ca48b2E15705Cc66FDa21eB58745a)
+    credit_facility = CreditFacility(0xd7E6ad255B3Ca48b2E15705Cc66FDa21eB58745a)
     credt = Credt(0x158d9270F7931d0eB48Efd72E62c0E9fFfE0E67b)
     blast = Blast(0x4300000000000000000000000000000000000002)
     fee_recipient = fees_to
 
-    yes.approve(baseline.address, max_value(uint256))   # baseline pulls yes on borrow
-    weth.approve(baseline.address, max_value(uint256))  # baseline pulls weth on repay
+    yes.approve(credit_facility.address, max_value(uint256))   # credit_facility pulls yes on borrow
+    weth.approve(credit_facility.address, max_value(uint256))  # credit_facility pulls weth on repay
     weth.approve(pac.address, max_value(uint256))       # pac pulls weth on flash loan repay
     weth.approve(router.address, max_value(uint256))    # router pulls weth on swap
     yes.approve(router.address, max_value(uint256))     # router pulls yes on swap
@@ -102,7 +102,7 @@ def loop(amount: uint256, num_loops: uint256, add_days: uint256) -> CreditAccoun
             break
         if i == 1:
             days = 0
-        borrow = baseline.borrow(msg.sender, yes.balanceOf(self), days)
+        borrow = credit_facility.borrow(msg.sender, yes.balanceOf(self), days)
         if i < num_loops - 1:
             weth.transferFrom(msg.sender, self, borrow.principal)
             self.buy_yes()
@@ -135,7 +135,7 @@ def executeOperation(asset: address, amount: uint256, premium: uint256, initiato
     assert msg.sender == pac.address  # dev: must come from pac pool
     assert initiator == self  # dev: must be self-initiated
     user: address = _abi_decode(params, address)
-    cash: uint256 = baseline.repay(user, amount)
+    cash: uint256 = credit_facility.repay(user, amount)
     yes.transferFrom(user, self, cash)
     yes.transfer(fee_recipient, cash / 1000)  # 0.1% fee for unwind
     self.sell_yes()
