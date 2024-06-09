@@ -23,7 +23,7 @@ def weth(project):
 
 @pytest.fixture
 def yes(project):
-    return project.basset.at("0x20fE91f17ec9080E3caC2d688b4EcB48C5aC3a9C")
+    return project.BPOOLv1.at("0x1a49351bdB4BE48C0009b661765D01ed58E8C2d8")
 
 
 @pytest.fixture
@@ -32,8 +32,13 @@ def looper(project, dev):
 
 
 @pytest.fixture
-def baseline(project):
-    return project.baseline.at("0x14eB8d9b6e19842B5930030B18c50B0391561f27")
+def credt(project):
+    return project.CREDTv1.at("0x158d9270F7931d0eB48Efd72E62c0E9fFfE0E67b")
+
+
+@pytest.fixture
+def credit_facility(project):
+    return project.CreditFacility.at("0xd7E6ad255B3Ca48b2E15705Cc66FDa21eB58745a")
 
 
 @pytest.fixture
