@@ -2,12 +2,13 @@
 # @author banteg
 # @title BaselineLooper
 # @notice Leverage loop into YES or unwind your position without needing the WETH.
-# @custom:contract-version 0.2.1
+# @custom:contract-version 0.3.0
 from vyper.interfaces import ERC20
 
 struct Borrow:
     principal: uint256
     interest: uint256
+    expiry: uint256
 
 struct ExactInputSingleParams:
     token_in: address
@@ -20,12 +21,9 @@ struct ExactInputSingleParams:
     sqrt_price_limit_x96: uint160
 
 struct CreditAccount:
-    principal: uint256
-    interest: uint256
+    credit: uint256
     collateral: uint256
     expiry: uint256
-    lastFloor: uint256
-
 
 interface Weth:
     def deposit(): payable
@@ -37,8 +35,9 @@ interface FlashLoan:
 interface Baseline:
     def borrow(user: address, amount: uint256, add_days: uint256) -> Borrow: nonpayable
     def repay(user: address, amount: uint256) -> uint256: nonpayable
+
+interface Credt:
     def getCreditAccount(user: address) -> CreditAccount: view
-    def getFloorPrice() -> uint256: view
 
 interface SwapRouter:
     def exactInputSingle(params: ExactInputSingleParams) -> uint256: payable
@@ -53,6 +52,7 @@ router: immutable(SwapRouter)
 weth: immutable(ERC20)
 yes: immutable(ERC20)
 baseline: immutable(Baseline)
+credt: immutable(Credt)
 blast: immutable(Blast)
 fee_recipient: immutable(address)
 
@@ -61,8 +61,9 @@ def __init__(fees_to: address):
     pac = FlashLoan(0xd2499b3c8611E36ca89A70Fda2A72C49eE19eAa8)
     router = SwapRouter(0x337827814155ECBf24D20231fCA4444F530C0555)
     weth = ERC20(0x4300000000000000000000000000000000000004)
-    yes = ERC20(0x20fE91f17ec9080E3caC2d688b4EcB48C5aC3a9C)
-    baseline = Baseline(0x14eB8d9b6e19842B5930030B18c50B0391561f27)
+    yes = ERC20(0x1a49351bdB4BE48C0009b661765D01ed58E8C2d8)
+    baseline = Baseline(0xd7E6ad255B3Ca48b2E15705Cc66FDa21eB58745a)
+    credt = Credt(0x158d9270F7931d0eB48Efd72E62c0E9fFfE0E67b)
     blast = Blast(0x4300000000000000000000000000000000000002)
     fee_recipient = fees_to
 
@@ -106,7 +107,7 @@ def loop(amount: uint256, num_loops: uint256, add_days: uint256) -> CreditAccoun
             weth.transferFrom(msg.sender, self, borrow.principal)
             self.buy_yes()
 
-    return baseline.getCreditAccount(msg.sender)
+    return credt.getCreditAccount(msg.sender)
 
 
 @external
@@ -118,21 +119,14 @@ def unwind(min_out: uint256, amount: uint256 = max_value(uint256)) -> (uint256, 
     @param amount Amount of WETH to flash loan for a partial unwind.
     @return Amount of WETH recovered and the post credit account state.
     """
-    account: CreditAccount = baseline.getCreditAccount(msg.sender)
-    floor_price: uint256 = baseline.getFloorPrice()
-
-    # bump to the lastest floor price
-    if floor_price > account.lastFloor:
-        baseline.borrow(msg.sender, 0, 0)
-        account = baseline.getCreditAccount(msg.sender)
-    
-    debt: uint256 = min(account.principal + account.interest, amount)
+    account: CreditAccount = credt.getCreditAccount(msg.sender)
+    debt: uint256 = min(account.credit, amount)
     assert debt > 0  # dev: no debt
     pac.flashLoanSimple(self, weth.address, debt, _abi_encode(msg.sender), 0)
     output: uint256 = weth.balanceOf(self)
     assert output >= min_out  # dev: insufficient output
     weth.transfer(msg.sender, output)
-    account = baseline.getCreditAccount(msg.sender)
+    account = credt.getCreditAccount(msg.sender)
     return output, account
 
 
