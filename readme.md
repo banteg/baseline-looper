@@ -37,14 +37,12 @@ Verified deployment:
 Loop into the market:
 
 ```bash
-LOOPER_ADDRESS=0x1B2D303C9e261770F3530e11D64Be996624EAAC1 \
 uv run ape run yes loop --network base:mainnet:node
 ```
 
 Unwind a position:
 
 ```bash
-LOOPER_ADDRESS=0x1B2D303C9e261770F3530e11D64Be996624EAAC1 \
 uv run ape run yes unwind --network base:mainnet:node
 ```
 
@@ -64,3 +62,4 @@ uv run ape test --network base:mainnet-fork:foundry
 - the looper pulls WETH back from the user on each loop leg, so users should approve WETH to the looper first
 - the unwinder pulls unlocked YES from the user after `repay()`, so users should approve YES to the looper before unwind
 - the Ape CLI uses an explicit gas limit on the Base market calls because auto-estimation was too low on the live fork
+- the CLI now hardcodes the deployed Base looper `0x1B2D303C9e261770F3530e11D64Be996624EAAC1` for mainnet usage

@@ -1,5 +1,4 @@
 from datetime import datetime
-import os
 
 import click
 import toolstr
@@ -8,6 +7,7 @@ from ape.cli import ConnectedProviderCommand
 
 BASE_YES_CREDIT_FACILITY = "0xc9329Cb681d1338219B9e21E5E99754853436C8D"
 AAVE_V3_BASE_POOL = "0xA238Dd80C259a72e81d7e4664a9801593F98d1c5"
+DEPLOYED_LOOPER = "0x1B2D303C9e261770F3530e11D64Be996624EAAC1"
 BASE_TX_GAS = 8_000_000
 
 
@@ -50,10 +50,7 @@ def get_looper(is_fork, deployer):
             gas=BASE_TX_GAS,
         )
 
-    looper_address = os.environ.get("LOOPER_ADDRESS")
-    if looper_address is None:
-        looper_address = click.prompt("looper address")
-    return project.Looper.at(looper_address)
+    return project.Looper.at(DEPLOYED_LOOPER)
 
 
 @cli.command(cls=ConnectedProviderCommand)

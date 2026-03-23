@@ -51,3 +51,4 @@ Current result:
 
 - Ape gas estimation was too low on the live Base fork for some market calls, so the CLI and tests use an explicit gas limit for Base transactions
 - `ape_foundry` does not currently have a Base hardfork map in its local constants, so the pinned fork block is useful for consistency, but the earlier failure was not caused by a stale foundry hardfork override
+- the Ape CLI hardcodes the deployed mainnet looper address for non-fork usage instead of reading it from an env var
