@@ -1,8 +1,0 @@
-eth-ape
-ape-blast
-ape-foundry
-ape-etherscan
-ape-vyper
-evmchains
-toolstr
-rich
