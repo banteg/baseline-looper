@@ -18,6 +18,7 @@ uv run ape accounts import anon
 - YES / bAsset: `0x1B68244B100A6713ca7F540697b1bE12148a8bf9`
 - reserve / WETH: `0x4200000000000000000000000000000000000006`
 - Aave V3 Base pool: `0xA238Dd80C259a72e81d7e4664a9801593F98d1c5`
+- deployed looper: `0x1B2D303C9e261770F3530e11D64Be996624EAAC1`
 
 ## CLI
 
@@ -27,17 +28,23 @@ Deploy a looper:
 uv run ape run yes deploy --network base:mainnet:node
 ```
 
+Verified deployment:
+
+```text
+0x1B2D303C9e261770F3530e11D64Be996624EAAC1
+```
+
 Loop into the market:
 
 ```bash
-LOOPER_ADDRESS=0xYourLooper \
+LOOPER_ADDRESS=0x1B2D303C9e261770F3530e11D64Be996624EAAC1 \
 uv run ape run yes loop --network base:mainnet:node
 ```
 
 Unwind a position:
 
 ```bash
-LOOPER_ADDRESS=0xYourLooper \
+LOOPER_ADDRESS=0x1B2D303C9e261770F3530e11D64Be996624EAAC1 \
 uv run ape run yes unwind --network base:mainnet:node
 ```
 

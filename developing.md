@@ -16,6 +16,7 @@ This repo now assumes the live Base YES deployment and no longer tries to preser
 - YES / bAsset: `0x1B68244B100A6713ca7F540697b1bE12148a8bf9`
 - reserve / WETH: `0x4200000000000000000000000000000000000006`
 - Aave V3 Base pool: `0xA238Dd80C259a72e81d7e4664a9801593F98d1c5`
+- deployed looper: `0x1B2D303C9e261770F3530e11D64Be996624EAAC1`
 
 ## Contract Behavior
 
