@@ -2,15 +2,16 @@ name: looper
 
 foundry:
   host: auto
+  fork:
+    base:
+      mainnet:
+        block_number: 43749913
 
 node:
-  blast:
+  base:
     mainnet:
-      uri: https://rpc.blast.io
+      uri: https://mainnet.base.org
 
-default_ecosystem: blast
-blast:
+default_ecosystem: base
+base:
   default_network: mainnet-fork
-
-vyper:
-  evm_version: shanghai

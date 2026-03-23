@@ -1,0 +1,13 @@
+[project]
+name = "looper"
+version = "0.1.0"
+requires-python = ">=3.11"
+dependencies = [
+    "ape-optimism",
+    "ape-vyper",
+    "click",
+    "eth-ape[recommended-plugins]",
+    "pytest",
+    "rich",
+    "toolstr",
+]

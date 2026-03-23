@@ -1,5 +1,9 @@
 import pytest
 
+BASE_YES_CREDIT_FACILITY = "0xc9329Cb681d1338219B9e21E5E99754853436C8D"
+AAVE_V3_BASE_POOL = "0xA238Dd80C259a72e81d7e4664a9801593F98d1c5"
+BASE_TX_GAS = 8_000_000
+
 
 @pytest.fixture
 def dev(accounts):
@@ -18,34 +22,34 @@ def whale(accounts):
 
 @pytest.fixture
 def weth(project):
-    return project.weth.at("0x4300000000000000000000000000000000000004")
+    return project.weth.at("0x4200000000000000000000000000000000000006")
 
 
 @pytest.fixture
 def yes(project):
-    return project.BPOOLv1.at("0x1a49351bdB4BE48C0009b661765D01ed58E8C2d8")
+    return project.ERC20.at("0x1B68244B100A6713ca7F540697b1bE12148a8bf9")
 
 
 @pytest.fixture
 def looper(project, dev):
-    return project.Looper.deploy(dev, sender=dev)
+    return project.Looper.deploy(
+        BASE_YES_CREDIT_FACILITY,
+        AAVE_V3_BASE_POOL,
+        sender=dev,
+        gas=BASE_TX_GAS,
+    )
 
 
 @pytest.fixture
 def credt(project):
-    return project.CREDTv1.at("0x158d9270F7931d0eB48Efd72E62c0E9fFfE0E67b")
+    return project.CREDTv1.at("0xa35E4Ac9565Fb006812755C30c369314be3511D9")
 
 
 @pytest.fixture
 def credit_facility(project):
-    return project.CreditFacility.at("0xd7E6ad255B3Ca48b2E15705Cc66FDa21eB58745a")
+    return project.CreditFacility.at(BASE_YES_CREDIT_FACILITY)
 
 
 @pytest.fixture
-def router(project):
-    return project.router.at("0x337827814155ECBf24D20231fCA4444F530C0555")
-
-
-@pytest.fixture
-def quoter(project):
-    return project.quoter.at("0x3b299f65b47c0bfAEFf715Bc73077ba7A0a685bE")
+def router(project, credit_facility):
+    return project.router.at(credit_facility.router())
