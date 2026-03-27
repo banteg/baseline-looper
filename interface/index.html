@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="stylesheet" href="style.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vite App</title>
+  </head>
+  <body>
+    <header>
+      <div class="logo">🔄</div>
+      <div class="wallet-btns">
+        <button id="chain-btn">...</button>
+        <button id="connect-btn">...</button>
+      </div>
+    </header>
+
+    <div id="app">
+      <section class="card">
+        <h2>Loop</h2>
+
+        <br />
+
+        <form id="looper-form">
+          <fieldset id="looper-fields">
+            <div class="form-field">
+              <label for="loop-amount">WETH to loop</label>
+              <input name="loop-amount" />
+            </div>
+
+            <div class="form-field">
+              <label for="num-loops">How many loops?</label>
+              <input name="num-loops" />
+            </div>
+
+            <div class="form-field">
+              <label for="add-days">Days to add</label>
+              <input name="add-days" />
+            </div>
+
+            <button id="loop-btn">Loop</button>
+          </fieldset>
+
+          <br />
+
+          <div>
+            <h3>Credit Account Changes</h3>
+            <p>Todo...</p>
+            <p><span class="before-after-label">Principal:</span> <span id="principal-before">69</span> → <span id="principal-after">420</span></p> 
+            <p><span class="before-after-label">Interest:</span> <span id="interest-before">69</span> → <span id="interest-after">420</span></p> 
+            <p><span class="before-after-label">Collateral:</span> <span id="collateral-before">69</span> → <span id="collateral-after">420</span></p> 
+            <p><span class="before-after-label">Expiry:</span> <span id="expiry-before">69</span> → <span id="expiry-after">420</span></p> 
+            <p><span class="before-after-label">Last Floor:</span> <span id="last-floor-before">69</span> → <span id="last-floor-after">420</span></p> 
+          </div>
+        </form>
+      </section>
+
+      <section class="card">
+        <h2>Unwind</h2>
+
+        <br />
+
+        <p>Todo...</p>
+      </section>
+    </div>
+  </body>
+  <script type="module" src="/main.js"></script>
+</html>
